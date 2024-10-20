@@ -89,6 +89,11 @@ class JobConfig:
             help="Whether to enable pytorch profiler",
         )
         self.parser.add_argument(
+            "--profiling.enable_cuda_event_iter_time",
+            action="store_true",
+            help="Whether to enable CUDA event based iter time profiling",
+        )
+        self.parser.add_argument(
             "--profiling.save_traces_folder",
             type=str,
             default="profile_traces",
@@ -531,6 +536,12 @@ class JobConfig:
             type=int,
             default=20000,
             help="Flight recorder ring buffer size, >0 means recording by default, 0 means disabled",
+        )
+        self.parser.add_argument(
+            "--comm.enable_fake_pg",
+            help="Whether to run the job with FakeProcessGroup",
+            default=False,
+            action="store_true",
         )
 
         # memory estimation settings

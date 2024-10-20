@@ -246,6 +246,16 @@ def main(job_config: JobConfig):
 
     checkpoint.reset()
 
+    # cuda based profiling
+
+    if job_config.profiling.enable_cuda_event_iter_time:
+        start_events = [torch.cuda.Event(enable_timing=True) for _ in range(job_config.training.steps)]
+        end_events = [torch.cuda.Event(enable_timing=True) for _ in range(job_config.training.steps)]
+        batch_sizes = []
+        seq_lens = []
+        mems_active_peak = []
+        mems_reserved_peak = []
+
     # train loop
     logger.info(
         f"Training starts at step {train_state.step + 1}, "
@@ -273,6 +283,10 @@ def main(job_config: JobConfig):
 
             input_ids = input_ids.cuda()
             labels = labels.cuda()
+            if job_config.profiling.enable_cuda_event_iter_time:
+                batch_sizes.append(input_ids.shape[0])
+                seq_lens.append(input_ids.shape[1])
+                start_events[train_state.step -1].record()
             optimizers.zero_grad()
 
             if parallel_dims.pp_enabled:
@@ -317,6 +331,14 @@ def main(job_config: JobConfig):
             checkpoint.maybe_wait_for_staging()
             optimizers.step()
             lr_schedulers.step()
+
+            if job_config.profiling.enable_cuda_event_iter_time:
+                end_events[train_state.step -1].record()
+                mem_stats = torch.cuda.memory_stats()
+                mems_active_peak.append(mem_stats["active_bytes.all.peak"])
+                mems_reserved_peak.append(mem_stats["reserved_bytes.all.peak"])
+                torch.cuda.reset_accumulated_memory_stats()
+                torch.cuda.reset_peak_memory_stats()
 
             # calculate float8 dynamic amax/scale for all-parameter for FSDP2
             # it issues a single all-reduce for all parameters at once for better performance
@@ -414,6 +436,28 @@ def main(job_config: JobConfig):
     if torch.distributed.get_rank() == 0:
         logger.info("Sleeping 2 seconds for other ranks to complete")
         time.sleep(2)
+    
+    torch.cuda.synchronize()
+    if job_config.profiling.enable_cuda_event_iter_time:
+        file_name = f"{job_config.model.name}_{job_config.model.flavor}"
+        if job_config.comm.enable_fake_pg:
+            file_name += f"_fake_pg"
+        rank = int(os.environ['RANK'])
+        ac_mode = job_config.activation_checkpoint.mode
+        out_file = f"{file_name}_{rank}.txt"
+        fout = open(os.path.join(job_config.job.dump_folder, out_file), "a")
+
+        for i in range(5, 15):
+            batch_size = batch_sizes[i]
+            seq_len = seq_lens[i]
+            iter_time = start_events[i].elapsed_time(end_events[i])
+            mem_active_peak = mems_active_peak[i]
+            mem_reserved_peak = mems_reserved_peak[i]
+            fout.write(f"{batch_size},{seq_len},{ac_mode},{iter_time},{mem_active_peak},{mem_reserved_peak}\n")
+        fout.flush()
+        fout.close()
+
+    torch.distributed.barrier()
 
     metric_logger.close()
     logger.info("Training completed")
