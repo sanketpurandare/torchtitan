@@ -33,5 +33,5 @@ torchx run mast.py:train \
     --name llama3_405b_bench \
     --h grandteton \
     --nodes 32  \
-    train_configs/llama3_4050b.toml
+    train_configs/llama3_405b.toml
 

@@ -525,7 +525,7 @@ class JobConfig:
         self.parser.add_argument(
             "--comm.train_timeout_seconds",
             type=int,
-            default=100,
+            default=1000,
             help=(
                 "Timeout for communication operations after the first train step -- "
                 "usually a tighter bound than during initialization."
