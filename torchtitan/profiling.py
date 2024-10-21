@@ -8,6 +8,7 @@ import contextlib
 import os
 import pickle
 import time
+from datetime import datetime
 
 import torch
 from torchtitan.config_manager import JobConfig
@@ -34,8 +35,9 @@ def maybe_enable_profiling(config: JobConfig, *, global_step: int = 0):
         rank = torch.distributed.get_rank()
 
         def trace_handler(prof):
+            datetime_str = datetime.now().strftime("%Y%m%d-%H%M")
             curr_trace_dir_name = "iteration_" + str(prof.step_num)
-            curr_trace_dir = os.path.join(trace_dir, curr_trace_dir_name)
+            curr_trace_dir = os.path.join(trace_dir, curr_trace_dir_name, datetime_str)
             if not os.path.exists(curr_trace_dir):
                 os.makedirs(curr_trace_dir, exist_ok=True)
 
