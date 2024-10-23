@@ -15,7 +15,7 @@ from torch.distributed._tools.fsdp2_mem_tracker import FSDPMemTracker
 from torch.testing._internal.distributed.fake_pg import FakeStore
 
 from torchtitan.config_manager import JobConfig
-from torchtitan.datasets import build_tokenizer
+from torchtitan.datasets import build_hf_data_loader, build_tokenizer
 from torchtitan.float8 import Float8Handler
 from torchtitan.logging import init_logger, logger
 from torchtitan.models import model_name_to_cls, model_name_to_tokenizer, models_config
@@ -84,6 +84,12 @@ def estimate_memory(job_config: JobConfig):
     # build meshes
     world_mesh = parallel_dims.build_mesh(device_type="cuda")
 
+    if parallel_dims.dp_enabled:
+        dp_mesh = world_mesh["dp"]
+        dp_degree, dp_rank = dp_mesh.size(), dp_mesh.get_local_rank()
+    else:
+        dp_degree, dp_rank = 1, 0
+
     if not parallel_dims.dp_enabled:
         logger.info("Data parallelism is not enabled. Skipping memory estimation.")
         return
@@ -93,6 +99,19 @@ def estimate_memory(job_config: JobConfig):
     # build tokenizer
     tokenizer_type = model_name_to_tokenizer[model_name]
     tokenizer = build_tokenizer(tokenizer_type, job_config.model.tokenizer_path)
+
+    # build dataloader
+    data_loader = build_hf_data_loader(
+        job_config.training.dataset,
+        job_config.training.dataset_path,
+        tokenizer,
+        job_config.training.batch_size,
+        job_config.training.seq_len,
+        dp_degree,
+        dp_rank,
+    )
+
+    return
 
     train_context = get_train_context(
         parallel_dims.loss_parallel_enabled,

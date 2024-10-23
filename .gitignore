@@ -3,7 +3,6 @@ __pycache__
 .DS_Store
 *.egg-info
 build
-outputs
 dist/*
 
 # data
@@ -20,3 +19,4 @@ _remote_module_non_scriptable.py
 
 # log files
 job_logs
+*.json

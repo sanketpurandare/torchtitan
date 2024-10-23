@@ -442,9 +442,14 @@ def main(job_config: JobConfig):
         file_name = f"{job_config.model.name}_{job_config.model.flavor}"
         if job_config.comm.enable_fake_pg:
             file_name += f"_fake_pg"
+        if job_config.training.tensor_parallel_degree > 1:
+            file_name += f"_2D"
+        else:
+            file_name += f"_1D"
         rank = int(os.environ['RANK'])
+        world_size = int(os.environ["WORLD_SIZE"])
         ac_mode = job_config.activation_checkpoint.mode
-        out_file = f"{file_name}_{rank}.txt"
+        out_file = f"{file_name}_{world_size}_{rank}.txt"
         fout = open(os.path.join(job_config.job.dump_folder, out_file), "a")
 
         for i in range(5, 15):

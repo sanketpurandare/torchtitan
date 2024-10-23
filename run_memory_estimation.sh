@@ -10,8 +10,8 @@ set -ex
 # use envs as local overrides for convenience
 # e.g.
 # NGPU=4 ./run_memory_estimation.sh
-NGPU=${NGPU:-"8"}
-NNODES=${NNODES:-"1"}
+NGPU=${NGPU:-"4"}
+NNODES=${NNODES:-"32"}
 CONFIG_FILE=${CONFIG_FILE:-"./train_configs/debug_model.toml"}
 
 overrides=""
