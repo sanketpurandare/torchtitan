@@ -1,0 +1,169 @@
++ NGPU=4
++ NNODES=32
++ overrides=
++ '[' 0 -ne 0 ']'
++ CONFIG_FILE=./train_configs/llama3_70b.toml
++ BATCH_SIZES=(2 2 2 1 1)
++ SEQ_LENS=(64 256 1024 4096 8192)
++ AC_MODES=(selective selective full full full)
++ TP_DEGREE=4
++ DP_REPLICATE_DEGREE=1
++ DUMP_FOLDER=/n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation
++ export WORLD_SIZE=128
++ WORLD_SIZE=128
++ export LOCAL_RANK=0
++ LOCAL_RANK=0
++ export RANK=0
++ RANK=0
++ (( i=0 ))
++ (( i<5 ))
++ BATCH_SIZE=2
++ SEQ_LEN=64
++ AC_MODE=selective
++ python estimation.py --job.config_file ./train_configs/llama3_70b.toml --job.dump_folder /n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation --training.batch_size 2 --training.seq_len 64 --training.tensor_parallel_degree 4 --training.data_parallel_replicate_degree 1 --activation_checkpoint.mode selective --memory_estimation.enabled
+2024-10-29 20:55:22,145 - root - INFO - Estimating memory usage...
+2024-10-29 20:55:22,229 - root - INFO - Building 2-D device mesh with ['dp', 'tp'], [32, 4]
+2024-10-29 20:55:22,233 - root - INFO - Building tiktoken tokenizer locally from ./torchtitan/datasets/tokenizer/original/tokenizer.model
+2024-10-29 20:55:22,348 - root - INFO - TikTokenizer built: #words 128256, BOS ID 128000, EOS ID 128001
+2024-10-29 20:55:22,349 - root - INFO - Building llama3 70B with ModelArgs(dim=8192, n_layers=80, n_heads=64, n_kv_heads=8, vocab_size=128256, multiple_of=4096, ffn_dim_multiplier=1.3, norm_eps=1e-05, rope_theta=500000, max_seq_len=64, depth_init=True, norm_type='rmsnorm')
+2024-10-29 20:55:23,870 - root - INFO - Applied Tensor Parallelism to the model
+2024-10-29 20:55:23,871 - root - INFO - Applied selective activation checkpointing to the model
+2024-10-29 20:55:23,871 - root - WARNING - detected that the pytorch is built from source. Please make sure the PR (https://github.com/pytorch/pytorch/pull/130760) is included in pytorch for correct 2D/3D DCP usage.
+2024-10-29 20:55:25,588 - root - INFO - Applied FSDP to the model
+2024-10-29 20:55:25,591 - root - INFO - Vocab size: 128256
+Peak Memory at iter: 0
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp     All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      0.0 MiB            0.06 MiB  2102.78 MiB     0.0 MiB           0.0 MiB       0.0 MiB  0.0 MiB       0.0 MiB           6308.35 MiB  0.0 MiB   10513.98 MiB
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Peak Memory at iter: 1
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp       All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      1002.02 MiB        0.06 MiB  2040.16 MiB     2505.02 MiB       0.0 MiB       501.0 MiB  0.0 MiB       816.06 MiB        4205.56 MiB  0.0 MiB   13172.66 MiB
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+peak active: 4.76837158203125e-07 GiB | peak reserved: 0.001953125 GiB | num_retries: 0
+Tracker Max: 12.863927841186523 GiB
++ (( i++ ))
++ (( i<5 ))
++ BATCH_SIZE=2
++ SEQ_LEN=256
++ AC_MODE=selective
++ python estimation.py --job.config_file ./train_configs/llama3_70b.toml --job.dump_folder /n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation --training.batch_size 2 --training.seq_len 256 --training.tensor_parallel_degree 4 --training.data_parallel_replicate_degree 1 --activation_checkpoint.mode selective --memory_estimation.enabled
+2024-10-29 20:56:31,238 - root - INFO - Estimating memory usage...
+2024-10-29 20:56:31,319 - root - INFO - Building 2-D device mesh with ['dp', 'tp'], [32, 4]
+2024-10-29 20:56:31,322 - root - INFO - Building tiktoken tokenizer locally from ./torchtitan/datasets/tokenizer/original/tokenizer.model
+2024-10-29 20:56:31,438 - root - INFO - TikTokenizer built: #words 128256, BOS ID 128000, EOS ID 128001
+2024-10-29 20:56:31,438 - root - INFO - Building llama3 70B with ModelArgs(dim=8192, n_layers=80, n_heads=64, n_kv_heads=8, vocab_size=128256, multiple_of=4096, ffn_dim_multiplier=1.3, norm_eps=1e-05, rope_theta=500000, max_seq_len=256, depth_init=True, norm_type='rmsnorm')
+2024-10-29 20:56:32,985 - root - INFO - Applied Tensor Parallelism to the model
+2024-10-29 20:56:32,987 - root - INFO - Applied selective activation checkpointing to the model
+2024-10-29 20:56:32,987 - root - WARNING - detected that the pytorch is built from source. Please make sure the PR (https://github.com/pytorch/pytorch/pull/130760) is included in pytorch for correct 2D/3D DCP usage.
+2024-10-29 20:56:34,738 - root - INFO - Applied FSDP to the model
+2024-10-29 20:56:34,742 - root - INFO - Vocab size: 128256
+Peak Memory at iter: 0
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp     All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      0.0 MiB            0.25 MiB  2102.78 MiB     0.0 MiB           0.0 MiB       0.0 MiB  0.0 MiB       0.0 MiB           6308.35 MiB  0.01 MiB  10514.17 MiB
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Peak Memory at iter: 1
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp       All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      1002.02 MiB        0.25 MiB  2040.16 MiB     2505.02 MiB       0.0 MiB       501.0 MiB  0.0 MiB       816.06 MiB        4205.56 MiB  0.01 MiB  13172.86 MiB
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+peak active: 4.76837158203125e-07 GiB | peak reserved: 0.001953125 GiB | num_retries: 0
+Tracker Max: 12.864116668701172 GiB
++ (( i++ ))
++ (( i<5 ))
++ BATCH_SIZE=2
++ SEQ_LEN=1024
++ AC_MODE=full
++ python estimation.py --job.config_file ./train_configs/llama3_70b.toml --job.dump_folder /n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation --training.batch_size 2 --training.seq_len 1024 --training.tensor_parallel_degree 4 --training.data_parallel_replicate_degree 1 --activation_checkpoint.mode full --memory_estimation.enabled
+2024-10-29 20:57:40,697 - root - INFO - Estimating memory usage...
+2024-10-29 20:57:40,776 - root - INFO - Building 2-D device mesh with ['dp', 'tp'], [32, 4]
+2024-10-29 20:57:40,780 - root - INFO - Building tiktoken tokenizer locally from ./torchtitan/datasets/tokenizer/original/tokenizer.model
+2024-10-29 20:57:40,894 - root - INFO - TikTokenizer built: #words 128256, BOS ID 128000, EOS ID 128001
+2024-10-29 20:57:40,895 - root - INFO - Building llama3 70B with ModelArgs(dim=8192, n_layers=80, n_heads=64, n_kv_heads=8, vocab_size=128256, multiple_of=4096, ffn_dim_multiplier=1.3, norm_eps=1e-05, rope_theta=500000, max_seq_len=1024, depth_init=True, norm_type='rmsnorm')
+2024-10-29 20:57:42,443 - root - INFO - Applied Tensor Parallelism to the model
+2024-10-29 20:57:42,444 - root - INFO - Applied full activation checkpointing to the model
+2024-10-29 20:57:42,444 - root - WARNING - detected that the pytorch is built from source. Please make sure the PR (https://github.com/pytorch/pytorch/pull/130760) is included in pytorch for correct 2D/3D DCP usage.
+2024-10-29 20:57:44,205 - root - INFO - Applied FSDP to the model
+2024-10-29 20:57:44,209 - root - INFO - Vocab size: 128256
+Peak Memory at iter: 0
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp     All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      0.0 MiB            1.0 MiB   2102.78 MiB     0.0 MiB           0.0 MiB       0.0 MiB  0.0 MiB       0.0 MiB           6308.35 MiB  0.03 MiB  10514.94 MiB
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Peak Memory at iter: 1
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp       All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      1002.02 MiB        1.0 MiB   2040.16 MiB     2505.02 MiB       0.0 MiB       501.0 MiB  0.0 MiB       816.06 MiB        4205.56 MiB  0.03 MiB  13173.63 MiB
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+peak active: 4.76837158203125e-07 GiB | peak reserved: 0.001953125 GiB | num_retries: 0
+Tracker Max: 12.864871978759766 GiB
++ (( i++ ))
++ (( i<5 ))
++ BATCH_SIZE=1
++ SEQ_LEN=4096
++ AC_MODE=full
++ python estimation.py --job.config_file ./train_configs/llama3_70b.toml --job.dump_folder /n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation --training.batch_size 1 --training.seq_len 4096 --training.tensor_parallel_degree 4 --training.data_parallel_replicate_degree 1 --activation_checkpoint.mode full --memory_estimation.enabled
+2024-10-29 20:58:47,854 - root - INFO - Estimating memory usage...
+2024-10-29 20:58:47,932 - root - INFO - Building 2-D device mesh with ['dp', 'tp'], [32, 4]
+2024-10-29 20:58:47,936 - root - INFO - Building tiktoken tokenizer locally from ./torchtitan/datasets/tokenizer/original/tokenizer.model
+2024-10-29 20:58:48,055 - root - INFO - TikTokenizer built: #words 128256, BOS ID 128000, EOS ID 128001
+2024-10-29 20:58:48,056 - root - INFO - Building llama3 70B with ModelArgs(dim=8192, n_layers=80, n_heads=64, n_kv_heads=8, vocab_size=128256, multiple_of=4096, ffn_dim_multiplier=1.3, norm_eps=1e-05, rope_theta=500000, max_seq_len=4096, depth_init=True, norm_type='rmsnorm')
+2024-10-29 20:58:49,589 - root - INFO - Applied Tensor Parallelism to the model
+2024-10-29 20:58:49,591 - root - INFO - Applied full activation checkpointing to the model
+2024-10-29 20:58:49,591 - root - WARNING - detected that the pytorch is built from source. Please make sure the PR (https://github.com/pytorch/pytorch/pull/130760) is included in pytorch for correct 2D/3D DCP usage.
+2024-10-29 20:58:51,326 - root - INFO - Applied FSDP to the model
+2024-10-29 20:58:51,330 - root - INFO - Vocab size: 128256
+Peak Memory at iter: 0
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp     All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      0.0 MiB            4.0 MiB   2102.78 MiB     0.0 MiB           0.0 MiB       0.0 MiB  0.0 MiB       0.0 MiB           6308.35 MiB  0.06 MiB  10517.97 MiB
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Peak Memory at iter: 1
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp       All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      1002.02 MiB        4.0 MiB   2040.16 MiB     2505.02 MiB       0.0 MiB       501.0 MiB  0.0 MiB       816.06 MiB        4205.56 MiB  0.06 MiB  13176.66 MiB
+========  ===============  =================  ========  ==============  ================  ============  =========  ============  ================  ===========  ========  ============
+peak active: 4.76837158203125e-07 GiB | peak reserved: 0.001953125 GiB | num_retries: 0
+Tracker Max: 12.86783218383789 GiB
++ (( i++ ))
++ (( i<5 ))
++ BATCH_SIZE=1
++ SEQ_LEN=8192
++ AC_MODE=full
++ python estimation.py --job.config_file ./train_configs/llama3_70b.toml --job.dump_folder /n/holyscratch01/idreos_lab/Users/spurandare/torchtitan/outputs/llama3_70b_FSDP_TP_estimation --training.batch_size 1 --training.seq_len 8192 --training.tensor_parallel_degree 4 --training.data_parallel_replicate_degree 1 --activation_checkpoint.mode full --memory_estimation.enabled
+2024-10-29 20:59:55,133 - root - INFO - Estimating memory usage...
+2024-10-29 20:59:55,214 - root - INFO - Building 2-D device mesh with ['dp', 'tp'], [32, 4]
+2024-10-29 20:59:55,217 - root - INFO - Building tiktoken tokenizer locally from ./torchtitan/datasets/tokenizer/original/tokenizer.model
+2024-10-29 20:59:55,335 - root - INFO - TikTokenizer built: #words 128256, BOS ID 128000, EOS ID 128001
+2024-10-29 20:59:55,336 - root - INFO - Building llama3 70B with ModelArgs(dim=8192, n_layers=80, n_heads=64, n_kv_heads=8, vocab_size=128256, multiple_of=4096, ffn_dim_multiplier=1.3, norm_eps=1e-05, rope_theta=500000, max_seq_len=8192, depth_init=True, norm_type='rmsnorm')
+2024-10-29 20:59:56,874 - root - INFO - Applied Tensor Parallelism to the model
+2024-10-29 20:59:56,875 - root - INFO - Applied full activation checkpointing to the model
+2024-10-29 20:59:56,875 - root - WARNING - detected that the pytorch is built from source. Please make sure the PR (https://github.com/pytorch/pytorch/pull/130760) is included in pytorch for correct 2D/3D DCP usage.
+2024-10-29 20:59:58,628 - root - INFO - Applied FSDP to the model
+2024-10-29 20:59:58,631 - root - INFO - Vocab size: 128256
+Peak Memory at iter: 0
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp     All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      0.0 MiB            8.0 MiB   2102.78 MiB     0.0 MiB           0.0 MiB       0.0 MiB  0.0 MiB       0.0 MiB           6308.35 MiB  0.12 MiB  10522.04 MiB
+========  ===============  =================  ========  ==============  ================  ============  =======  ============  ================  ===========  ========  ============
+Peak Memory at iter: 1
+========  ===============  =================  ========  ==============  ================  ============  ===========  ============  ================  ===========  ========  ============
+Device    Sharded Param    Unsharded Param    Buffer    Sharded Grad    Unsharded Grad    Activation    Temp         All Gather    Reduce Scatter    OptState     Inputs    Total
+========  ===============  =================  ========  ==============  ================  ============  ===========  ============  ================  ===========  ========  ============
+cuda:0    2102.78 MiB      1410.05 MiB        8.0 MiB   25.5 MiB        0.0 MiB           2528.0 MiB    1909.53 MiB  408.03 MiB    816.06 MiB        4205.56 MiB  0.12 MiB  13413.65 MiB
+========  ===============  =================  ========  ==============  ================  ============  ===========  ============  ================  ===========  ========  ============
+peak active: 4.76837158203125e-07 GiB | peak reserved: 0.001953125 GiB | num_retries: 0
+Tracker Max: 13.099265098571777 GiB
++ (( i++ ))
++ (( i<5 ))

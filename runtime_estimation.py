@@ -14,6 +14,7 @@ import torch
 from torch._guards import active_fake_mode
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.distributed._tools.fsdp2_mem_tracker import FSDPMemTracker
+from torch.distributed._tools.spmd_runtime_estimator import SPMDRuntimeEstimator
 from torch.distributed._tools.fake_collectives import CollDistMode
 from torch.testing._internal.distributed.fake_pg import FakeStore
 
@@ -27,9 +28,9 @@ from torchtitan.parallelisms import models_parallelize_fns, ParallelDims
 from train import get_train_context
 
 
-def estimate_memory(job_config: JobConfig):
+def estimate_runtime(job_config: JobConfig):
     init_logger()
-    logger.info("Estimating memory usage...")
+    logger.info("Estimating runtime...")
     gc.disable()
     gc.collect(1)
 
@@ -80,7 +81,7 @@ def estimate_memory(job_config: JobConfig):
     # init fake pg
     store = FakeStore()
     torch.distributed.init_process_group(
-        "fake", rank=int(os.environ["LOCAL_RANK"]), world_size=world_size, store=store
+        "fake", rank=int(os.environ["LOCAL_RANK"]), world_size=world_size, store=store, group_name="custom"
     )
 
     # build meshes
@@ -194,72 +195,61 @@ def estimate_memory(job_config: JobConfig):
                 device="cuda",
             ),
         )
-        fsdp_memtracker = FSDPMemTracker(mod=model, optm=optimizers.optimizers[0])
-        fsdp_memtracker.track_inputs(batch)
+        spmd_estimator = SPMDRuntimeEstimator(world_mesh)
 
-        with fsdp_memtracker:
-            for iter_idx in range(2):
-                start_time = time.time()
-                input_ids, labels = batch
-                # train step
-                with train_context():
-                    pred = model(input_ids)
-                    loss = loss_fn(pred, labels)
-                    del pred
-                    loss.backward()
+        def train_step():
+            input_ids, labels = batch
+            # train step
+            with train_context():
+                pred = model(input_ids)
+                loss = loss_fn(pred, labels)
+                del pred
+                loss.backward()
 
-                # clip gradients
-                torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), job_config.training.max_norm, foreach=True
-                )
-                # sync float8 amaxes and scales
-                float8_handler.sync_float8_amax_and_scale_history(model)
-                # optimizer step
-                optimizers.step()
-                lr_schedulers.step()
-                # calculate float8 dynamic amax/scale for all-parameter for FSDP2
-                # it issues a single all-reduce for all parameters at once for better performance
-                float8_handler.precompute_float8_dynamic_scale_for_fsdp(model)
-                optimizers.zero_grad()
-                end_time = time.time()
-                print(f"Peak Memory at iter: {iter_idx}")
-                fsdp_memtracker.display_snapshot("peak", units="MiB", tabulate=True)
-                if iter_idx == 0:
-                    fsdp_memtracker.reset_mod_stats()  # iter 0 does not have optimizer state
-                gc.collect(1)
+            # clip gradients
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), job_config.training.max_norm, foreach=True
+            )
+            # sync float8 amaxes and scales
+            float8_handler.sync_float8_amax_and_scale_history(model)
+            # optimizer step
+            optimizers.step()
+            lr_schedulers.step()
+            # calculate float8 dynamic amax/scale for all-parameter for FSDP2
+            # it issues a single all-reduce for all parameters at once for better performance
+            float8_handler.precompute_float8_dynamic_scale_for_fsdp(model)
+            optimizers.zero_grad()
+            gc.collect(1)
+
+        train_step()
+
+        with spmd_estimator(estimate_mode_type='operator-level-learned-model', collective_mode_type='learned-model'):
+            start_time = time.time()
+            train_step()
+            end_time = time.time()
+                
 
         # fsdp_memtracker.display_modulewise_snapshots(
         #     depth=3, units="MiB", tabulate=True
         # )
-        mem_stats = torch.cuda.memory_stats()
-        peak_active = mem_stats["active_bytes.all.peak"]
-        peak_reserved = mem_stats["reserved_bytes.all.peak"]
-        num_retries = mem_stats["num_alloc_retries"]
-        dev = torch.device(torch.cuda.current_device())
-        tracker_peak = fsdp_memtracker.get_tracker_snapshot("peak")[dev]["Total"]
-        setup_config["tracker_peak"] = tracker_peak
+        setup_config["total_runtime"] = spmd_estimator.total_runtime
+        setup_config["total_compute"] = spmd_estimator.total_runtime
+        setup_config["total_comm"] = spmd_estimator.total_runtime
         setup_config["est_time"] = (end_time - start_time)
-        gib = 1024**3
-        print(
-            f"peak active: {peak_active / gib} GiB | peak reserved:"
-            f" {peak_reserved / gib} GiB | num_retries: {num_retries}"
-        )
-        print(f"Tracker Max: {tracker_peak / gib} GiB")
+       
         file_name = f"{job_config.model.name}_{job_config.model.flavor}"
         if job_config.training.tensor_parallel_degree > 1:
             file_name += f"_2D"
         else:
             file_name += f"_1D"
-        if job_config.memory_estimation.disable_fake_mode and peak_active > 0:
-            print(f"Tracker Accuracy: {tracker_peak/peak_active}")
 
         rank = int(os.environ['RANK'])
         world_size = int(os.environ["WORLD_SIZE"])
-        out_file = f"{file_name}_{world_size}_{rank}.txt"
+        out_file = f"{file_name}_{world_size}_{rank}_runtime_estimate.txt"
         out_dir = Path(job_config.job.dump_folder)
         out_dir.mkdir(parents=True, exist_ok=True)
         fout = open(f"{out_dir}/{out_file}", "a")
-        fout.write(f'{setup_config["batch_size"]},{setup_config["seq_len"]},{setup_config["ac_mode"]},{setup_config["tracker_peak"]},{setup_config["est_time"]}\n')
+        fout.write(f'{setup_config["batch_size"]},{setup_config["seq_len"]},{setup_config["ac_mode"]},{setup_config["total_runtime"]},{setup_config["total_compute"]},{setup_config["total_comm"]},{setup_config["est_time"]}\n')
         fout.flush()
         fout.close()
 
@@ -271,6 +261,6 @@ if __name__ == "__main__":
     config.parse_args()
     try:
         with CollDistMode():
-            estimate_memory(config)
+            estimate_runtime(config)
     finally:
         torch.distributed.destroy_process_group()

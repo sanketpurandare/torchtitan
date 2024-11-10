@@ -35,6 +35,8 @@ from torchtitan.parallelisms.utils import check_strided_sharding_enabled
 def parallelize_llama(
     model: nn.Module,
     world_mesh: DeviceMesh,
+    dp_mesh: DeviceMesh,
+    tp_mesh:DeviceMesh,
     parallel_dims: ParallelDims,
     job_config: JobConfig,
 ):
@@ -54,7 +56,7 @@ def parallelize_llama(
             raise RuntimeError("Async TP requires --training.compile")
         apply_tp(
             model,
-            world_mesh["tp"],
+            tp_mesh,
             loss_parallel=parallel_dims.loss_parallel_enabled,
             enable_float8=job_config.float8.enable_float8_linear,
             enable_async_tp=job_config.experimental.enable_async_tensor_parallel,
@@ -74,11 +76,6 @@ def parallelize_llama(
 
     if parallel_dims.dp_enabled:
         if parallel_dims.dp_shard_enabled:
-            if parallel_dims.dp_replicate_enabled:
-                dp_mesh = world_mesh["dp_replicate", "dp_shard"]
-            else:
-                dp_mesh = world_mesh["dp"]
-
             apply_fsdp(
                 model,
                 dp_mesh,
