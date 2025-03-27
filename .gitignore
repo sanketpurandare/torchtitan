@@ -19,3 +19,6 @@ assets/**/*.model
 *.log
 error.json
 _remote_module_non_scriptable.py
+
+# log files
+job_logs

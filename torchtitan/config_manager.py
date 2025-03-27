@@ -717,6 +717,12 @@ class JobConfig:
         )
 
         self.parser.add_argument(
+            "--runtime_estimation.enabled",
+            help="Whether to estimate runtime",
+            action="store_true",
+        )
+
+        self.parser.add_argument(
             "--fault_tolerance.enable",
             action="store_true",
             help="""
